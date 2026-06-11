@@ -1,0 +1,79 @@
+# LY-TRINITY Distributed Sentinel
+# GitHub Actions Workflow — 自主心跳哨兵节点
+# 触发方式: schedule(每6h) + manual + repository_dispatch
+# 免费额度: 2000分钟/月 ≈ 每天66分钟 ≈ 足够轻量哨兵
+
+name: ly-trinity-sentinel
+
+on:
+  schedule:
+    # 每6小时执行一次心跳
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      task:
+        description: 'Task to execute'
+        required: false
+        default: 'heartbeat'
+      mode:
+        description: 'Execution mode'
+        required: false
+        default: 'normal'
+        type: choice
+        options:
+          - normal
+          - deep_scan
+          - report_only
+  repository_dispatch:
+    types: [heartbeat, command, sync]
+
+permissions:
+  contents: read
+  issues: write
+  actions: write
+
+jobs:
+  sentinel:
+    name: LY-TRINITY Sentinel Node
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+      - name: 🌱 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 📦 Install Dependencies
+        run: |
+          pip install requests pyjwt cryptography --quiet
+
+      - name: 💓 Execute Sentinel
+        env:
+          SENTINEL_MODE: ${{ github.event.inputs.mode || 'normal' }}
+          SENTINEL_TASK: ${{ github.event.inputs.task || 'heartbeat' }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_NUMBER: ${{ github.run_number }}
+          NODE_ID: "gh-actions-01"
+          TIMESTAMP: ${{ github.event.head_commit.timestamp || 'scheduled' }}
+        run: python sentinel.py
+
+      - name: 📊 Upload Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sentinel-report-${{ github.run_id }}
+          path: |
+            sentinel_report.json
+            sentinel_state.json
+          retention-days: 7
+
+      - name: 🔔 Notify Status (on failure)
+        if: failure()
+        run: |
+          echo "::warning::Sentinel node gh-actions-01 reported FAILURE"
+          echo "Run: ${{ github.run_id }} | Task: ${{ github.event.inputs.task || 'heartbeat' }}"
