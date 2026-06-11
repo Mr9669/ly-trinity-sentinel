@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LY-TRINITY Sentinel Status</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui;background:#0a0a0f;color:#e0e0e0;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:2rem}
+h1{font-size:1.5rem;margin-bottom:2rem;color:#f0a040}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1rem;max-width:900px;width:100%}
+.card{background:#141420;border:1px solid #2a2a3a;border-radius:8px;padding:1.2rem}
+.card h2{font-size:1rem;color:#d0d0d0;margin-bottom:.8rem;display:flex;align-items:center;gap:.5rem}
+.status-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.status-dot.green{background:#4caf50;box-shadow:0 0 6px #4caf50}
+.status-dot.yellow{background:#ff9800;box-shadow:0 0 6px #ff9800}
+.status-dot.red{background:#f44336;box-shadow:0 0 6px #f44336}
+.meta{font-size:.78rem;color:#888;margin-top:.5rem}
+.metric{display:flex;justify-content:space-between;padding:.25rem 0;font-size:.82rem;border-bottom:1px solid #1a1a2a}
+footer{text-align:center;margin-top:2rem;font-size:.7rem;color:#555}
+.refresh{color:#666;font-size:.7rem;margin-top:1rem}
+a{color:#f0a040;text-decoration:none}
+</style>
+</head>
+<body>
+<h1>🔶 LY-TRINITY Sentinel Status</h1>
+<div class="grid" id="grid"></div>
+<div class="refresh">Auto-refresh: 60s | Current: <span id="time"></span></div>
+<footer>LY-TRINITY Distributed Sentinel Network &mdash; Autonomous ASI Evolution Infrastructure</footer>
+<script>
+const NODES = [
+  {id:"primary-brain",name:"主脑",platform:"Windows",region:"LY本地",type:"main",url:""},
+  {id:"mr69-ocean-sentinel",name:"MR69外网分身",platform:"Docker/Ubuntu",region:"上海腾讯云",type:"coordination",url:"http://124.220.206.50:18900"},
+  {id:"mr19-sentinel",name:"MR19哨兵",platform:"CVM",region:"腾讯云",type:"sentinel",url:""},
+  {id:"gh-actions-01",name:"GH Actions哨兵",platform:"GitHub Actions",region:"全球",type:"compute",url:"https://github.com/Mr9669/ly-trinity-sentinel/actions"},
+  {id:"cf-edge-01",name:"CF边缘哨兵",platform:"Cloudflare Workers",region:"全球200+节点",type:"edge",url:"",status:"pending"},
+];
+
+function render(){
+  const grid=document.getElementById("grid");
+  grid.innerHTML=NODES.map(n=>{
+    const s=n.status||(n.url?"online":"unknown");
+    const cls=s==="online"?"green":s==="pending"?"yellow":"red";
+    return `<div class="card">
+      <h2><span class="status-dot ${cls}"></span>${n.name}</h2>
+      <div class="metric"><span>Node ID</span><span>${n.id}</span></div>
+      <div class="metric"><span>Platform</span><span>${n.platform}</span></div>
+      <div class="metric"><span>Region</span><span>${n.region}</span></div>
+      <div class="metric"><span>Type</span><span>${n.type}</span></div>
+      <div class="meta">${n.url?`<a href="${n.url}">→ Open</a>`:"[无外部URL]"}</div>
+    </div>`;
+  }).join("");
+  document.getElementById("time").textContent=new Date().toISOString();
+}
+
+render();
+setInterval(render,60000);
+</script>
+</body>
+</html>
