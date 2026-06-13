@@ -78,6 +78,13 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
+
+    
+    - name: LY-TRINITY Neuron
+      if: always()
+      run: |
+        python3 ${{ github.workspace }}/neuron_runner.py
+
           REPORT_PREVIEW=$(python3 -c "
           import json
           try:
