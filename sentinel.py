@@ -38,9 +38,15 @@ REPORT_FILE = Path("sentinel_report.json")
 STATE_FILE = Path("sentinel_state.json")
 
 # 主节点地址（MR69）
-PRIMARY_NODE = "http://124.220.206.50:18789"
+PRIMARY_NODE = os.environ.get(
+    "LY_PRIMARY_NODE",
+    "http://localhost:18789"
+)
 # 备用节点（MR19）
-BACKUP_NODE = "http://101.43.90.226:18789"
+BACKUP_NODE = os.environ.get(
+    "LY_BACKUP_NODE",
+    "http://localhost:18789"
+)
 
 
 def collect_environment():
