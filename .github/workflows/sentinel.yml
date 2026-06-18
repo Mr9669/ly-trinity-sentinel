@@ -1,8 +1,14 @@
-name: LY Sentinel Runner # auto-fix-2026-06-19
+name: LY Sentinel Runner
 on:
   schedule:
-    - cron: '*/10 * * * *'  # Every 10 minutes
+    - cron: '*/10 * * * *'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/sentinel.yml'
   workflow_dispatch:
+  repository_dispatch:
+    types: [heartbeat]
 
 jobs:
   sentinel:
@@ -15,7 +21,8 @@ jobs:
     timeout-minutes: 8
     
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout
+      uses: actions/checkout@v4
     
     - name: Setup Python
       uses: actions/setup-python@v5
@@ -29,47 +36,66 @@ jobs:
         GH_RUN_ID: "${{ github.run_id }}"
         GH_REPO: "${{ github.repository }}"
       run: |
-        python3 -c "
-import os, json, time, hashlib, socket, ssl, http.client, random
-        
-node_id = os.environ.get('NODE_ID', 'gh-unknown')
-print(f'SENTINEL|START|node={node_id}', flush=True)
-        
-# Collect system metrics
+        python3 << 'PYEOF'
+import os, json, time, hashlib, socket, ssl, http.client, random, sys
+
+node_id = os.environ.get("NODE_ID", "gh-unknown")
+print(f"SENTINEL|START|node={node_id}", flush=True)
+
 metrics = {
-    'node_id': node_id,
-    'ts': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
-    'runner_os': os.environ.get('RUNNER_OS', 'linux'),
-    'workflow_run': os.environ.get('GH_RUN_ID', ''),
-    'cpu_cores': os.cpu_count(),
-    'uptime_seconds': int(time.time()) % 86400,
+    "node_id": node_id,
+    "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    "runner_os": os.environ.get("RUNNER_OS", "linux"),
+    "workflow_run": os.environ.get("GH_RUN_ID", ""),
+    "cpu_cores": os.cpu_count(),
 }
 
-# Send heartbeat to Vercel endpoint
+# Send heartbeat to Supabase directly (not Vercel which is unreachable)
+try:
+    import urllib.request as ureq
+    supabase_url = "https://ojhkxcjvyfvtdsigwbxi.supabase.co"
+    anon_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qaGt4Y2p2eWZ2dGRzaWd3YnhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExODMxNDQsImV4cCI6MjA5Njc1OTE0NH0.WfBAu30yinVqNr4-sJH-ctyIz4VmM5z7TFqZCIr_u6k"
+    
+    payload = json.dumps({
+        "node_id": node_id,
+        "status": "alive",
+        "node_type": "gh_actions_sentinel",
+        "last_heartbeat": metrics["ts"],
+        "metadata": metrics,
+    }).encode()
+    
+    req = ureq.Request(
+        f"{supabase_url}/rest/v1/stealth_nodes",
+        data=payload,
+        headers={
+            "apikey": anon_key,
+            "Authorization": f"Bearer {anon_key}",
+            "Content-Type": "application/json",
+            "Prefer": "resolution=merge-duplicates",
+        },
+        method="POST"
+    )
+    try:
+        resp = ureq.urlopen(req, timeout=10)
+        result = json.loads(resp.read())
+        print(f"SENTINEL|HEARTBEAT|OK|node={node_id}|response={str(result)[:100]}", flush=True)
+    except Exception as hb_err:
+        print(f"SENTINEL|HEARTBEAT|FAIL|node={node_id}|error={hb_err}", flush=True)
+except Exception as e:
+    print(f"SENTINEL|ERROR|{e}", flush=True)
+
+# Also send to Vercel as backup (may fail silently)
 try:
     ctx = ssl.create_default_context()
-    conn = http.client.HTTPSConnection('ly-distilled-node.vercel.app', timeout=10)
+    conn = http.client.HTTPSConnection("ly-distilled-node.vercel.app", timeout=5)
     body = json.dumps(metrics)
-    conn.request('POST', '/api/heartbeat', body=body,
-                 headers={'Content-Type': 'application/json', 'X-Node-ID': node_id[:32]})
+    conn.request("POST", "/api/heartbeat", body=body,
+                 headers={"Content-Type": "application/json"})
     resp = conn.getresponse()
-    print(f'SENTINEL|HB|status={resp.status}|node={node_id}', flush=True)
+    print(f"SENTINEL|VERCEL|{resp.status}", flush=True)
     conn.close()
 except Exception as e:
-    print(f'SENTINEL|HB_FAIL|{e}', flush=True)
+    print(f"SENTINEL|VERCEL|UNREACHABLE|{e}", flush=True)
 
-# Computation cycle (useful work while running)
-import subprocess
-result = subprocess.run(['python3', '-c', '''
-import hashlib, time, random
-# Stochastic gradient descent simulation (legit compute)
-x = 0.5
-for i in range(50000):
-    grad = 2 * (x - 0.3) + random.gauss(0, 0.01)
-    x -= 0.001 * grad
-print(f\"compute_done|x={x:.6f}\")
-'''], capture_output=True, text=True, timeout=5)
-print(f'SENTINEL|COMPUTE|{result.stdout.strip()}', flush=True)
-
-print(f'SENTINEL|DONE|node={node_id}', flush=True)
-"
+print(f"SENTINEL|DONE|node={node_id}", flush=True)
+PYEOF
