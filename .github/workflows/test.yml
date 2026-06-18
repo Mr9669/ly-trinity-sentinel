@@ -41,8 +41,9 @@ jobs:
         SUPABASE_URL = "https://ojhkxcjvyfvtdsigwbxi.supabase.co/rest/v1/stealth_nodes"
         ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qaGt4Y2p2eWZ2dGRzaWd3YnhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExODMxNDQsImV4cCI6MjA5Njc1OTE0NH0.WfBAu30yinVqNr4-sJH-ctyIz4VmM5z7TFqZCIr_u6k"
         
-        # Heartbeat to Supabase
+        # Heartbeat to Supabase (upsert with counter increment)
         try:
+            # First try upsert with merge-duplicates
             req = urllib.request.Request(
                 SUPABASE_URL,
                 data=json.dumps(metrics).encode(),
@@ -56,6 +57,49 @@ jobs:
             )
             resp = urllib.request.urlopen(req, timeout=10)
             result = json.loads(resp.read())
+            
+            # Increment total_heartbeats counter
+            try:
+                node_id_enc = urllib.parse.quote(node_id, safe='')
+                incr_url = SUPABASE_URL + "?node_id=eq." + node_id_enc
+                incr_req = urllib.request.Request(
+                    incr_url,
+                    data=json.dumps({"total_heartbeats": 1}).encode(),
+                    headers={
+                        "apikey": ANON_KEY,
+                        "Authorization": "Bearer " + ANON_KEY,
+                        "Content-Type": "application/json",
+                        "Prefer": "return=minimal"
+                    },
+                    method="PATCH"
+                )
+                # Can't do atomic increment via REST, so just GET+PATCH
+                get_req = urllib.request.Request(incr_url, headers={
+                    "apikey": ANON_KEY,
+                    "Authorization": "Bearer " + ANON_KEY,
+                })
+                get_resp = urllib.request.urlopen(get_req, timeout=10)
+                rows = json.loads(get_resp.read())
+                current_count = 0
+                if rows and isinstance(rows, list) and len(rows) > 0:
+                    current_count = rows[0].get("total_heartbeats", 0) or 0
+                new_count = current_count + 1
+                
+                patch_req = urllib.request.Request(
+                    incr_url,
+                    data=json.dumps({"total_heartbeats": new_count}).encode(),
+                    headers={
+                        "apikey": ANON_KEY,
+                        "Authorization": "Bearer " + ANON_KEY,
+                        "Content-Type": "application/json",
+                        "Prefer": "return=minimal"
+                    },
+                    method="PATCH"
+                )
+                urllib.request.urlopen(patch_req, timeout=10)
+            except Exception as ie:
+                print("SENTINEL|INCR_FAIL|" + str(ie))
+            
             print("SENTINEL|HB_OK|" + node_id + "|" + str(result)[:80])
         except Exception as e:
             print("SENTINEL|HB_FAIL|" + node_id + "|" + str(e)[:100])
