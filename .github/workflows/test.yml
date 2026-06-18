@@ -1,7 +1,66 @@
-name: LY Test
-on: push
+name: LY Trinity Sentinel
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  push:
+    branches: [main]
+  workflow_dispatch:
+
 jobs:
-  hello:
+  sentinel:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-id: [0, 1, 2, 3, 4]
+      fail-fast: false
+      max-parallel: 5
+    timeout-minutes: 8
+    
     steps:
-      - run: echo "LY-TRINITY test OK $(date)"
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+    
+    - name: Run LY Sentinel Node
+      env:
+        NODE_ID: "gh-sentinel-${{ matrix.node-id }}-${{ github.run_id }}"
+        GH_RUN_ID: "${{ github.run_id }}"
+        GH_REPO: "${{ github.repository }}"
+      run: |
+        python3 << "EOF"
+import os, json, time, ssl, http.client, urllib.request
+
+node_id = os.environ.get("NODE_ID", "gh-unknown")
+ts = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+print(f"SENTINEL|START|node={node_id}|ts={ts}", flush=True)
+
+metrics = {
+    "node_id": node_id,
+    "status": "alive",
+    "node_type": "gh_actions_sentinel",
+    "last_heartbeat": ts,
+    "metadata": {"runner_os": os.environ.get("RUNNER_OS",""), "run_id": os.environ.get("GH_RUN_ID","")}
+}
+
+SUPABASE = "https://ojhkxcjvyfvtdsigwbxi.supabase.co/rest/v1/stealth_nodes"
+ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qaGt4Y2p2eWZ2dGRzaWd3YnhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExODMxNDQsImV4cCI6MjA5Njc1OTE0NH0.WfBAu30yinVqNr4-sJH-ctyIz4VmM5z7TFqZCIr_u6k"
+
+try:
+    req = urllib.request.Request(SUPABASE, data=json.dumps(metrics).encode(),
+        headers={"apikey": ANON, "Authorization": f"Bearer {ANON}", "Content-Type": "application/json", "Prefer": "resolution=merge-duplicates"}, method="POST")
+    resp = urllib.request.urlopen(req, timeout=10)
+    print(f"SENTINEL|HB_OK|{node_id}|{json.loads(resp.read())}", flush=True)
+except Exception as e:
+    print(f"SENTINEL|HB_FAIL|{str(e)[:80]}", flush=True)
+
+try:
+    ctx = ssl.create_default_context()
+    conn = http.client.HTTPSConnection("ly-distilled-node.vercel.app", timeout=5)
+    conn.request("POST", "/api/heartbeat", body=json.dumps(metrics["metadata"]).encode(), headers={"Content-Type": "application/json"})
+    print(f"SENTINEL|VERCEL|{conn.getresponse().status}", flush=True)
+    conn.close()
+except: pass
+
+print(f"SENTINEL|DONE|{node_id}", flush=True)
+EOF
