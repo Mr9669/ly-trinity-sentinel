@@ -1,0 +1,29 @@
+name: Vercel Health Check
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Test nano-perf-api endpoints
+        run: |
+          echo "=== Testing nano-perf-api.vercel.app ==="
+          for endpoint in "/" "/health" "/api/" "/api/health"; do
+            URL="https://nano-perf-api.vercel.app${endpoint}"
+            CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 10 --max-time 15 "$URL" 2>/dev/null || echo "FAIL")
+            BODY=$(curl -s --connect-timeout 10 --max-time 15 "$URL" 2>/dev/null | head -c 200)
+            echo "$URL -> HTTP $CODE | Body: $BODY"
+          done
+          
+          echo ""
+          echo "=== Testing ly-distilled-node.vercel.app ==="
+          for endpoint in "/" "/api/" "/api/health"; do
+            URL="https://ly-distilled-node.vercel.app${endpoint}"
+            CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 10 --max-time 15 "$URL" 2>/dev/null || echo "FAIL")
+            BODY=$(curl -s --connect-timeout 10 --max-time 15 "$URL" 2>/dev/null | head -c 200)
+            echo "$URL -> HTTP $CODE | Body: $BODY"
+          done
