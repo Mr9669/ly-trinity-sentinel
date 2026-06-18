@@ -1,6 +1,6 @@
 # Vercel Health Probe
 
-Time: 2026-06-18T19:24:23Z
+Time: 2026-06-18T21:34:48Z
 
 ## nano-perf-api.vercel.app
 - `https://nano-perf-api.vercel.app/` -> HTTP 404
@@ -8,25 +8,25 @@ Time: 2026-06-18T19:24:23Z
 
 NOT_FOUND
 
-cle1::bjw5t-1781810663075-210aa1f6b622`
+sfo1::llqq8-1781818488705-5d6586f0f864`
 - `https://nano-perf-api.vercel.app/health` -> HTTP 500
   Body: `A server error has occurred
 
 FUNCTION_INVOCATION_FAILED
 
-cle1::dtcpm-1781810663306-5b3e5f44a713`
+sfo1::mz4tt-1781818488759-4205a7431dbf`
 - `https://nano-perf-api.vercel.app/api/` -> HTTP 500
   Body: `A server error has occurred
 
 FUNCTION_INVOCATION_FAILED
 
-cle1::9hqsn-1781810663609-048721cd4fd4`
+sfo1::77nc2-1781818489098-637c0ab91072`
 - `https://nano-perf-api.vercel.app/api/health` -> HTTP 404
   Body: `The page could not be found
 
 NOT_FOUND
 
-cle1::556hs-1781810663876-0c5863948ce6`
+sfo1::h6fw4-1781818489357-52c051279b26`
 
 ## ly-distilled-node.vercel.app
 - `https://ly-distilled-node.vercel.app/` -> HTTP 404
@@ -34,34 +34,18 @@ cle1::556hs-1781810663876-0c5863948ce6`
 
 NOT_FOUND
 
-cle1::cfkn2-1781810663971-461550eb2560`
-- `https://ly-distilled-node.vercel.app/health` -> HTTP 404
-  Body: `The page could not be found
-
-NOT_FOUND
-
-cle1::gxphv-1781810664210-1f23e935773f`
-- `https://ly-distilled-node.vercel.app/api` -> HTTP 404
-  Body: `The page could not be found
-
-NOT_FOUND
-
-cle1::944hx-1781810664314-4ae340a03c5a`
-- `https://ly-distilled-node.vercel.app/api/` -> HTTP 404
-  Body: `The page could not be found
-
-NOT_FOUND
-
-cle1::lz5xg-1781810664497-aaac738fc8f4`
-- `https://ly-distilled-node.vercel.app/api/health` -> HTTP 404
-  Body: `The page could not be found
-
-NOT_FOUND
-
-cle1::5c9zq-1781810664593-d74f6dc0152b`
+sfo1::f6vv2-1781818489401-d1d371dca3ce`
+- `https://ly-distilled-node.vercel.app/health` -> HTTP 200
+  Body: `{"ok": true, "status": "healthy", "node_id": "vercel-distilled-01", "timestamp": "2026-06-18T21:34:49.504086+00:00", "hb_configured": true, "python": "3.12.13 (main, May 15 2026, 17:14:48) [G", "platform": "Linux-5.10.253-286.1015.amzn2.x86_64-x86_64-with-glibc2.34"}`
+- `https://ly-distilled-node.vercel.app/api` -> HTTP 200
+  Body: `{"ok": true, "status": "healthy", "node_id": "vercel-distilled-01", "timestamp": "2026-06-18T21:34:49.622979+00:00", "hb_configured": true, "python": "3.12.13 (main, May 15 2026, 17:14:48) [G", "platform": "Linux-5.10.253-286.1015.amzn2.x86_64-x86_64-with-glibc2.34"}`
+- `https://ly-distilled-node.vercel.app/api/` -> HTTP 200
+  Body: `{"ok": true, "status": "healthy", "node_id": "vercel-distilled-01", "timestamp": "2026-06-18T21:34:49.747520+00:00", "hb_configured": true, "python": "3.12.13 (main, May 15 2026, 17:14:48) [G", "platform": "Linux-5.10.253-286.1015.amzn2.x86_64-x86_64-with-glibc2.34"}`
+- `https://ly-distilled-node.vercel.app/api/health` -> HTTP 200
+  Body: `{"ok": true, "status": "healthy", "node_id": "vercel-distilled-01", "timestamp": "2026-06-18T21:34:49.873303+00:00", "hb_configured": true, "python": "3.12.13 (main, May 15 2026, 17:14:48) [G", "platform": "Linux-5.10.253-286.1015.amzn2.x86_64-x86_64-with-glibc2.34"}`
 - `https://ly-distilled-node.vercel.app/api/heartbeat` -> HTTP 404
   Body: `The page could not be found
 
 NOT_FOUND
 
-cle1::q4zn2-1781810664676-871441c860dd`
+sfo1::xq9jg-1781818489955-0db7e36e146a`
