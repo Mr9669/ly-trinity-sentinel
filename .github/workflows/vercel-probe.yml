@@ -7,7 +7,7 @@ on:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 5
     permissions:
       contents: write
     steps:
@@ -24,16 +24,16 @@ jobs:
               URL="https://nano-perf-api.vercel.app${ep}"
               CODE=$(curl -s -o /tmp/body -w "%{http_code}" --connect-timeout 10 --max-time 15 "$URL" 2>/dev/null || echo "FAIL")
               BODY=$(cat /tmp/body 2>/dev/null | head -c 500)
-              echo "- \`${URL}\` → HTTP ${CODE}"
+              echo "- \`${URL}\` -> HTTP ${CODE}"
               echo "  Body: \`${BODY}\`"
             done
             echo ""
             echo "## ly-distilled-node.vercel.app"
-            for ep in "/" "/api/"; do
+            for ep in "/" "/health" "/api" "/api/" "/api/health" "/api/heartbeat"; do
               URL="https://ly-distilled-node.vercel.app${ep}"
               CODE=$(curl -s -o /tmp/body2 -w "%{http_code}" --connect-timeout 10 --max-time 15 "$URL" 2>/dev/null || echo "FAIL")
               BODY=$(cat /tmp/body2 2>/dev/null | head -c 500)
-              echo "- \`${URL}\` → HTTP ${CODE}"
+              echo "- \`${URL}\` -> HTTP ${CODE}"
               echo "  Body: \`${BODY}\`"
             done
           } > vercel-health-report.md
