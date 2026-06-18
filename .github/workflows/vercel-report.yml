@@ -1,0 +1,53 @@
+name: Vercel Health Report
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Check endpoints
+        id: check
+        run: |
+          echo "RESULTS<<EOF" >> $GITHUB_OUTPUT
+          echo "=== nano-perf-api.vercel.app ===" >> $GITHUB_OUTPUT
+          for ep in "/" "/health" "/api/" "/api/health"; do
+            URL="https://nano-perf-api.vercel.app${ep}"
+            CODE=$(curl -s -o /tmp/body -w "%{http_code}" --connect-timeout 10 --max-time 15 "$URL" 2>/dev/null || echo "FAIL")
+            BODY=$(cat /tmp/body 2>/dev/null | head -c 300)
+            echo "${URL} -> HTTP ${CODE} | Body: ${BODY}" >> $GITHUB_OUTPUT
+          done
+          echo "" >> $GITHUB_OUTPUT
+          echo "=== ly-distilled-node.vercel.app ===" >> $GITHUB_OUTPUT
+          for ep in "/" "/api/"; do
+            URL="https://ly-distilled-node.vercel.app${ep}"
+            CODE=$(curl -s -o /tmp/body2 -w "%{http_code}" --connect-timeout 10 --max-time 15 "$URL" 2>/dev/null || echo "FAIL")
+            BODY=$(cat /tmp/body2 2>/dev/null | head -c 300)
+            echo "${URL} -> HTTP ${CODE} | Body: ${BODY}" >> $GITHUB_OUTPUT
+          done
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+      - name: Create check run with results
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const results = `${{ steps.check.outputs.RESULTS }}`;
+            await github.rest.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'Vercel Health Report',
+              head_sha: context.sha,
+              status: 'completed',
+              conclusion: 'success',
+              output: {
+                title: 'Vercel Health Check Results',
+                summary: results
+              }
+            });
+      
+      - name: Print results
+        run: |
+          echo "${{ steps.check.outputs.RESULTS }}"
