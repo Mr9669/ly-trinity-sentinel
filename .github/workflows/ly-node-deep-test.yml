@@ -1,0 +1,48 @@
+name: LY Node Deep Test
+on:
+  workflow_dispatch:
+
+jobs:
+  deep-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deep test CF Worker
+        run: |
+          WORKER_URL="https://ly-quantum-node-001.19821319669.workers.dev"
+          {
+            echo "# LY Quantum Node Deep Test"
+            echo "Time: $(date -u)"
+            echo ""
+            echo "## Endpoint tests"
+            for ep in "/" "/api" "/_tick" "/health"; do
+              URL="${WORKER_URL}${ep}"
+              CODE=$(curl -s -o /tmp/body -w "%{http_code}" --connect-timeout 10 --max-time 20 "$URL" 2>/dev/null || echo "FAIL")
+              BODY=$(cat /tmp/body 2>/dev/null | head -c 500)
+              echo "- ${ep} -> HTTP ${CODE}"
+              echo "  Body: ${BODY}"
+            done
+            
+            echo ""
+            echo "## Heartbeat test"
+            echo "Calling /_tick to trigger mainLoop..."
+            curl -s --connect-timeout 15 --max-time 30 "$WORKER_URL/_tick" 2>/dev/null
+            echo ""
+            sleep 5
+            
+            echo "## Check Supabase for new node"
+            SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qaGt4Y2p2eWZ2dGRzaWd3YnhpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExODMxNDQsImV4cCI6MjA5Njc1OTE0NH0.WfBAu30yinVqNr4-sJH-ctyIz4VmM5z7TFqZCIr_u6k"
+            SB_URL="https://ojhkxcjvyfvtdsigwbxi.supabase.co/rest/v1/stealth_nodes?select=node_id,node_type,last_heartbeat&order=last_heartbeat.desc&limit=5"
+            curl -s -H "apikey: $SB_KEY" -H "Authorization: Bearer $SB_KEY" "$SB_URL" 2>/dev/null | python3 -m json.tool 2>/dev/null | head -30
+          } > ly-node-test-report.md
+          cat ly-node-test-report.md
+      - name: Commit report
+        run: |
+          git config user.name "ly-sentinel-bot"
+          git config user.email "sentinel@ly-trinity.local"
+          git add ly-node-test-report.md
+          git diff --staged --quiet || git commit -m "chore: LY node deep test report [skip ci]"
+          git push
