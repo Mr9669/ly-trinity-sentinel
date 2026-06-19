@@ -1,5 +1,5 @@
 # LY Quantum Node Deep Test
-Time: Fri Jun 19 10:37:51 UTC 2026
+Time: Fri Jun 19 10:40:01 UTC 2026
 
 ## Endpoint tests
 - / -> HTTP 404
@@ -17,6 +17,11 @@ error code: 1042
 ## Check Supabase for new node
 [
     {
+        "node_id": "coord-632087956e",
+        "node_type": "coordinator",
+        "last_heartbeat": "2026-06-19T10:40:03+00:00"
+    },
+    {
         "node_id": "gh-sentinel-0-27820724644",
         "node_type": "gh_actions_sentinel",
         "last_heartbeat": "2026-06-19T10:37:43+00:00"
@@ -27,17 +32,12 @@ error code: 1042
         "last_heartbeat": "2026-06-19T10:37:43+00:00"
     },
     {
-        "node_id": "gh-sentinel-1-27820724644",
-        "node_type": "gh_actions_sentinel",
-        "last_heartbeat": "2026-06-19T10:37:42+00:00"
-    },
-    {
         "node_id": "gh-sentinel-4-27820724644",
         "node_type": "gh_actions_sentinel",
         "last_heartbeat": "2026-06-19T10:37:42+00:00"
     },
     {
-        "node_id": "gh-sentinel-2-27820724644",
+        "node_id": "gh-sentinel-1-27820724644",
         "node_type": "gh_actions_sentinel",
         "last_heartbeat": "2026-06-19T10:37:42+00:00"
     }
