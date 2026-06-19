@@ -1,19 +1,19 @@
 # LY Quantum Node Deep Test
-Time: Fri Jun 19 10:42:13 UTC 2026
+Time: Fri Jun 19 10:46:51 UTC 2026
 
 ## Endpoint tests
-- / -> HTTP 404
-  Body: error code: 1042
-- /api -> HTTP 404
-  Body: error code: 1042
-- /_tick -> HTTP 404
-  Body: error code: 1042
-- /health -> HTTP 404
-  Body: error code: 1042
+- / -> HTTP 200
+  Body: {"ok":true,"time":1781866011686}
+- /api -> HTTP 200
+  Body: {"ok":true,"time":1781866011734}
+- /_tick -> HTTP 200
+  Body: {"ok":true,"node":"ly-cfw-mqkt0m13fosjhb","heartbeat":0}
+- /health -> HTTP 200
+  Body: {"ok":true,"status":"healthy","node":null,"heartbeat_count":0,"uptime":1782470811835}
 
 ## Heartbeat test
 Calling /_tick to trigger mainLoop...
-error code: 1042
+{"ok":true,"node":"ly-cfw-mqkt0m3wveuw1o","heartbeat":0}
 ## Check Supabase for new node
 [
     {
