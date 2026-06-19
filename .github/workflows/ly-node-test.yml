@@ -1,0 +1,28 @@
+name: LY Quantum Node Test
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  test-worker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Test CF Worker
+        run: |
+          WORKER_URL="https://ly-quantum-node-001.19821319669.workers.dev"
+          echo "=== Testing root endpoint ==="
+          CODE=$(curl -s -o /tmp/body -w "%{http_code}" --connect-timeout 10 "$WORKER_URL/" 2>/dev/null)
+          BODY=$(cat /tmp/body 2>/dev/null)
+          echo "GET / -> HTTP $CODE | Body: $BODY"
+          
+          echo "=== Testing /_tick (trigger mainLoop) ==="
+          CODE2=$(curl -s -o /tmp/body2 -w "%{http_code}" --connect-timeout 15 "$WORKER_URL/_tick" 2>/dev/null)
+          BODY2=$(cat /tmp/body2 2>/dev/null)
+          echo "GET /_tick -> HTTP $CODE2 | Body: $BODY2"
+          
+          echo "=== Testing /api ==="
+          CODE3=$(curl -s -o /tmp/body3 -w "%{http_code}" --connect-timeout 10 "$WORKER_URL/api" 2>/dev/null)
+          BODY3=$(cat /tmp/body3 2>/dev/null)
+          echo "GET /api -> HTTP $CODE3 | Body: $BODY3"
