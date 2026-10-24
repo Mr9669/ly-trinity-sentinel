@@ -3,6 +3,10 @@ on:
   schedule:
     - cron: "*/15 * * * *"
   workflow_dispatch:
+    inputs:
+      why:
+        description: "tick reason (normal / probe)"
+        default: "gh_hb"
 concurrency:
   group: bee-heartbeat
   cancel-in-progress: false
@@ -14,15 +18,17 @@ jobs:
       - name: tick bees via secret list
         env:
           BEE_URLS: ${{ secrets.BEE_URLS }}
+          WHY: ${{ inputs.why || 'gh_hb' }}
         run: |
           set -u
           [ -n "${BEE_URLS:-}" ] || { echo "no BEE_URLS secret"; exit 1; }
           for u in $(echo "$BEE_URLS" | tr ',' ' '); do echo "::add-mask::$u"; done
+          echo "why=$WHY"
           n=0; ok=0
           for u in $(echo "$BEE_URLS" | tr ',' ' '); do
             n=$((n+1)); hit=000
-            body=$(curl -s -m 25 "https://$u/api/tick?why=gh_hb" || echo '{}')
-            code=$(curl -s -o /dev/null -m 25 -w '%{http_code}' "https://$u/api/tick?why=gh_hb2" || echo 000)
+            body=$(curl -s -m 25 "https://$u/api/tick?why=$WHY" || echo '{}')
+            code=$(curl -s -o /dev/null -m 25 -w '%{http_code}' "https://$u/api/tick?why=$WHY" || echo 000)
             diag=$(echo "$body" | tr -d ' ' | grep -o '"ok":[a-z]*\|"status":[0-9]*\|"ntfy":[0-9a-z]*\|"action":"[a-z_]*"\|"table_hit":[a-z]*' | tr '\n' ',')
             echo "bee#$n code=$code diag=[$diag]"
             [ "$code" = "200" ] && hit=200
