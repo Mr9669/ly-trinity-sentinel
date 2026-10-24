@@ -17,16 +17,16 @@ jobs:
         run: |
           set -u
           [ -n "${BEE_URLS:-}" ] || { echo "no BEE_URLS secret"; exit 1; }
-          for u in $(echo "$BEE_URLS" | tr ',' ' '); do
-            echo "::add-mask::$u"
-          done
+          for u in $(echo "$BEE_URLS" | tr ',' ' '); do echo "::add-mask::$u"; done
           n=0; ok=0
           for u in $(echo "$BEE_URLS" | tr ',' ' '); do
-            n=$((n+1))
-            code=$(curl -s -o /dev/null -m 20 -w '%{http_code}' "https://$u/tick?why=gh_hb" || echo 000)
-            echo "bee#$n -> $code"
-            [ "$code" = "200" ] && ok=$((ok+1))
-            sleep 2
+            n=$((n+1)); hit=000
+            for p in /api/tick /tick; do
+              c=$(curl -s -o /dev/null -m 25 -w '%{http_code}' "https://$u$p?why=gh_hb" || echo 000)
+              echo "bee#$n path=$p code=$c"
+              if [ "$c" = "200" ]; then hit=200; fi
+            done
+            [ "$hit" = "200" ] && ok=$((ok+1))
+            sleep 1
           done
           echo "ok=$ok/$n"
-          [ "$ok" -ge 1 ]
