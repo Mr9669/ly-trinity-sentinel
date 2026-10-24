@@ -1,0 +1,20 @@
+name: bee-probe
+on: workflow_dispatch:
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: probe root and tick paths
+        env:
+          H: ${{ secrets.BEE_PROBE_HOST }}
+        run: |
+          set -u
+          echo "::add-mask::$H"
+          for p in / /tick /api/tick /ping /api/ping; do
+            code=$(curl -s -o /tmp/body -m 25 -w '%{http_code}' "https://$H$p" || echo 000)
+            hdr=$(curl -sI -o /dev/null -m 20 -w '%{http_code}' "https://$H$p" || echo 000)
+            err=$(curl -sI -m 20 "https://$H$p" | tr -d '\r' | grep -i 'x-vercel-error\|x-matched-path' | tr '\n' ' ' || true)
+            sz=$(wc -c < /tmp/body 2>/dev/null || echo 0)
+            echo "path=$p code=$code head=$hdr bytes=$sz hdr=[$err]"
+          done
