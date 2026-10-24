@@ -1,0 +1,32 @@
+name: bee-heartbeat
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+concurrency:
+  group: bee-heartbeat
+  cancel-in-progress: false
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: tick bees via secret list
+        env:
+          BEE_URLS: ${{ secrets.BEE_URLS }}
+        run: |
+          set -u
+          [ -n "${BEE_URLS:-}" ] || { echo "no BEE_URLS secret"; exit 1; }
+          for u in $(echo "$BEE_URLS" | tr ',' ' '); do
+            echo "::add-mask::$u"
+          done
+          n=0; ok=0
+          for u in $(echo "$BEE_URLS" | tr ',' ' '); do
+            n=$((n+1))
+            code=$(curl -s -o /dev/null -m 20 -w '%{http_code}' "https://$u/tick?why=gh_hb" || echo 000)
+            echo "bee#$n -> $code"
+            [ "$code" = "200" ] && ok=$((ok+1))
+            sleep 2
+          done
+          echo "ok=$ok/$n"
+          [ "$ok" -ge 1 ]
