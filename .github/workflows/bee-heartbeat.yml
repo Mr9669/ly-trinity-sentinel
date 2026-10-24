@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       why:
-        description: "tick reason (normal / probe)"
+        description: "tick reason (normal / probe / probe2)"
         default: "gh_hb"
 concurrency:
   group: bee-heartbeat
@@ -29,7 +29,7 @@ jobs:
             n=$((n+1)); hit=000
             body=$(curl -s -m 25 "https://$u/api/tick?why=$WHY" || echo '{}')
             code=$(curl -s -o /dev/null -m 25 -w '%{http_code}' "https://$u/api/tick?why=$WHY" || echo 000)
-            diag=$(echo "$body" | tr -d ' ' | grep -o '"ok":[a-z]*\|"status":[0-9]*\|"ntfy":[0-9a-z]*\|"action":"[a-z_]*"\|"table_hit":[a-z]*' | tr '\n' ',')
+            diag=$(echo "$body" | tr -d ' ' | grep -o '"ok":[a-z]*\|"status":[0-9]*\|"ntfy":[0-9a-z]*\|"action":"[a-z_]*"\|"table_hit":[a-z]*\|"retired":[a-z]*\|"why":"[a-z_0-9]*"' | tr '\n' ',')
             echo "bee#$n code=$code diag=[$diag]"
             [ "$code" = "200" ] && hit=200
             [ "$hit" = "200" ] && ok=$((ok+1))
