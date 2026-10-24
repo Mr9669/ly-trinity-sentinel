@@ -23,7 +23,7 @@ jobs:
             n=$((n+1)); hit=000
             body=$(curl -s -m 25 "https://$u/api/tick?why=gh_hb" || echo '{}')
             code=$(curl -s -o /dev/null -m 25 -w '%{http_code}' "https://$u/api/tick?why=gh_hb2" || echo 000)
-            diag=$(echo "$body" | tr -d ' ' | grep -o '"ok":[a-z]*\|"status":[0-9]*\|"ntfy":[0-9a-z]*\|"window":[0-9]*' | tr '\n' ',')
+            diag=$(echo "$body" | tr -d ' ' | grep -o '"ok":[a-z]*\|"status":[0-9]*\|"ntfy":[0-9a-z]*\|"action":"[a-z_]*"\|"table_hit":[a-z]*' | tr '\n' ',')
             echo "bee#$n code=$code diag=[$diag]"
             [ "$code" = "200" ] && hit=200
             [ "$hit" = "200" ] && ok=$((ok+1))
